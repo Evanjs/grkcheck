@@ -1,11 +1,13 @@
 extern crate reqwest;
 extern crate kuchiki;
 extern crate html5ever;
+extern crate linuxver;
+//extern crate semver;
 
 use kuchiki::traits::*;
 use std::string::String;
-use reqwest::Client;
-
+use reqwest::Client; 
+//use semver::Version;
 
 fn get_request(client: &Client, s: &str) -> String {
     let res = client.get(s).send().unwrap().text();
@@ -43,7 +45,10 @@ fn main() {
     let client = reqwest::Client::new();
     let vanilla = get_vanilla(&client);
     let gentoo = get_gentoo(&client);
+    let local_kernel = linuxver::version().unwrap();
 
     println!("Vanilla: {}", vanilla);
     println!("Gentoo: {}", gentoo);
+    println!("Currently running kernel version: {}.{}.{}", local_kernel.major, local_kernel.minor, local_kernel.patch );
+
 }
