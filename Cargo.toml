@@ -5,3 +5,5 @@ authors = ["Evan.Stoll <evan.stoll@rjginc.com>"]
 
 [dependencies]
 reqwest = "0.8.5"
+kuchiki = "0.7.0"
+html5ever = "0.22.0"
