@@ -2,15 +2,13 @@ extern crate reqwest;
 extern crate kuchiki;
 extern crate html5ever;
 extern crate linuxver;
-//extern crate semver;
 
+use std::thread;
 use kuchiki::traits::*;
 use std::string::String;
-use reqwest::Client; 
-//use semver::Version;
 
-fn get_request(client: &Client, s: &str) -> String {
-    let res = client.get(s).send().unwrap().text();
+fn get_request(s: &str) -> String {
+    let res = reqwest::get(s).unwrap().text();
     let body = format!("{}", res.unwrap().to_string());
     return body;
 }
@@ -25,30 +23,35 @@ fn eval_css_selector(text: &str, css_selector: &str) -> String{
     return formatted_text;
 }
 
-fn get_vanilla(client: &Client) -> String {
-    let u: &str = &String::from("https://www.kernel.org");
-    let css_selector: &str = &String::from("#latest_link > a");
-    let result = get_request(client, u);
-    let css_result = eval_css_selector(&result, css_selector);
-    return css_result;
-}
-
-fn get_gentoo(client: &Client) -> String {
-    let u: &str = &String::from("https://packages.gentoo.org/packages/sys-kernel/gentoo-sources");
-    let css_selector: &str = &String::from("body > div.container > div > div > div > div.col-md-9 > div:nth-child(1) > div.table-responsive > table > tbody > tr:nth-child(1) > td.kk-version.kk-cell-sep-right > strong > a");
-    let result = get_request(client, u);
+fn get_version(url: &str, css_selector: &str) -> String {
+    let result = get_request(url);
     let css_result = eval_css_selector(&result, css_selector);
     return css_result;
 }
 
 fn main() {
-    let client = reqwest::Client::new();
-    let vanilla = get_vanilla(&client);
-    let gentoo = get_gentoo(&client);
-    let local_kernel = linuxver::version().unwrap();
+    // TODO: Clean up parallelization
+    let vanilla = thread::spawn(|| {
+       let version = get_version(
+            "https://packages.gentoo.org/packages/sys-kernel/gentoo-sources",
+            "body > div.container > div > div > div > div.col-md-9\
+        > div:nth-child(1) > div.table-responsive > table > tbody\
+        > tr:nth-child(1) > td.kk-version.kk-cell-sep-right > strong > a");
+        println!("Vanilla: {}", version);
+    });
 
-    println!("Vanilla: {}", vanilla);
-    println!("Gentoo: {}", gentoo);
-    println!("Currently running kernel version: {}.{}.{}", local_kernel.major, local_kernel.minor, local_kernel.patch );
+    let gentoo = thread::spawn(|| {
+        let version = get_version("https://www.kernel.org", "#latest_link > a");
+        println!("Gentoo: {}", version);
+    });
+
+    let local = thread::spawn(|| {
+        let local_kernel = linuxver::version().unwrap();
+        println!("Currently running kernel version: {}.{}.{}", local_kernel.major, local_kernel.minor, local_kernel.patch );
+    });
+
+    vanilla.join();
+    gentoo.join();
+    local.join();
 
 }
