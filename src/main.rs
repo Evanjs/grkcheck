@@ -31,20 +31,22 @@ fn get_version(url: &str, css_selector: &str) -> String {
 
 fn main() {
     // TODO: Clean up parallelization
-    let vanilla = thread::spawn(|| {
+    let gentoo = thread::spawn(|| {
        let version = get_version(
             "https://packages.gentoo.org/packages/sys-kernel/gentoo-sources",
             "body > div.container > div > div > div > div.col-md-9\
         > div:nth-child(1) > div.table-responsive > table > tbody\
         > tr:nth-child(1) > td.kk-version.kk-cell-sep-right > strong > a");
-        println!("Vanilla: {}", version);
-    });
-
-    let gentoo = thread::spawn(|| {
-        let version = get_version("https://www.kernel.org", "#latest_link > a");
         println!("Gentoo: {}", version);
     });
 
+    // TODO: more robust version detection.  Latest version isn't always the first on the page
+    let vanilla = thread::spawn(|| {
+        let version = get_version("https://www.kernel.org", "#latest_link > a");
+        println!("Vanilla: {}", version);
+    });
+
+    // TODO: more robust version detection.  stable (in the version table) isn't always the latest version, which might be shown under #latest_link, etc.
     let local = thread::spawn(|| {
         let local_kernel = linuxver::version().unwrap();
         println!("Currently running kernel version: {}.{}.{}", local_kernel.major, local_kernel.minor, local_kernel.patch );
