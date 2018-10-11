@@ -1,4 +1,3 @@
-#![feature(match_default_bindings)]
 #![feature(alloc_system)]
 
 extern crate reqwest;
